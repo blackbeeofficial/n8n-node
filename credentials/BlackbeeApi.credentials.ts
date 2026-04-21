@@ -20,6 +20,13 @@ export class BlackbeeApi implements ICredentialType {
 			default: '',
 			description: 'Sent as the Authorization: ApiKey header on every request.',
 		},
+		{
+			displayName: 'Base URL',
+			name: 'baseUrl',
+			type: 'string',
+			default: 'https://api-dev.blackbeeai.com',
+			description: 'Blackbee API base URL. Change this to target a different Blackbee environment.',
+		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
@@ -33,7 +40,7 @@ export class BlackbeeApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://api-dev.blackbeeai.com',
+			baseURL: '={{$credentials.baseUrl}}',
 			url: '/masterdata-api/companies/label-values',
 			method: 'GET',
 		},

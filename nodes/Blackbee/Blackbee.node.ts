@@ -2,6 +2,7 @@ import { INodeType, INodeTypeDescription } from 'n8n-workflow';
 
 import { vendorOperations, vendorFields, billOperations, billFields } from './descriptions';
 import {
+	getAllStates,
 	getCountries,
 	getCurrencies,
 	getNetTerms,
@@ -30,7 +31,7 @@ export class Blackbee implements INodeType {
 			},
 		],
 		requestDefaults: {
-			baseURL: 'https://api-dev.blackbeeai.com',
+			baseURL: '={{$credentials.baseUrl}}',
 			headers: {
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
@@ -59,6 +60,7 @@ export class Blackbee implements INodeType {
 		loadOptions: {
 			getCountries,
 			getStates,
+			getAllStates,
 			getCurrencies,
 			getVendorTypes,
 			getNetTerms,

@@ -1,12 +1,22 @@
 import {
 	IDataObject,
 	IExecuteFunctions,
+	IExecuteSingleFunctions,
 	IHookFunctions,
 	IHttpRequestMethods,
 	ILoadOptionsFunctions,
 } from 'n8n-workflow';
 
-export const BLACKBEE_BASE_URL = 'https://api-dev.blackbeeai.com';
+export async function getBlackbeeBaseUrl(
+	this:
+		| ILoadOptionsFunctions
+		| IExecuteFunctions
+		| IExecuteSingleFunctions
+		| IHookFunctions,
+): Promise<string> {
+	const credentials = await this.getCredentials('blackbeeApi');
+	return (credentials.baseUrl as string) ?? '';
+}
 
 export async function blackbeeApiRequest(
 	this: ILoadOptionsFunctions | IExecuteFunctions | IHookFunctions,
@@ -15,9 +25,10 @@ export async function blackbeeApiRequest(
 	qs: IDataObject = {},
 	body: IDataObject | undefined = undefined,
 ): Promise<any> {
+	const baseURL = await getBlackbeeBaseUrl.call(this);
 	return this.helpers.httpRequestWithAuthentication.call(this, 'blackbeeApi', {
 		method,
-		baseURL: BLACKBEE_BASE_URL,
+		baseURL,
 		url: endpoint,
 		qs,
 		body,

@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-blackbee",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "n8n community node for the Blackbee Accounts-Payable API.",
   "keywords": [
     "n8n-community-node-package",
@@ -10,6 +10,17 @@
     "vendor"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/blackbeeofficial/n8n-node#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blackbeeofficial/n8n-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blackbeeofficial/n8n-node/issues"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
   "main": "dist/nodes/Blackbee/Blackbee.node.js",
   "scripts": {
     "build": "tsc && gulp build:icons",
@@ -20,6 +31,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
@@ -29,11 +44,8 @@
       "dist/nodes/Blackbee/Blackbee.node.js"
     ]
   },
-  "dependencies": {
-    "form-data": "^4.0.0"
-  },
   "devDependencies": {
-    "@types/node": "^18.19.0",
+    "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",

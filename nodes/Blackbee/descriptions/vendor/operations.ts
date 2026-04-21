@@ -1,5 +1,9 @@
 import { INodeProperties } from 'n8n-workflow';
-import { resolveAddressLabels, resolveAttachmentFiles } from '../../methods/preSend';
+import {
+	normalizeRemitToBusinessUnits,
+	resolveAddressLabels,
+	resolveAttachmentFiles,
+} from '../../methods/preSend';
 
 export const vendorOperations: INodeProperties[] = [
 	{
@@ -16,7 +20,13 @@ export const vendorOperations: INodeProperties[] = [
 				description: 'Create a new vendor record',
 				routing: {
 					request: { method: 'POST', url: '/ap-api/vendor/create' },
-					send: { preSend: [resolveAddressLabels, resolveAttachmentFiles] },
+					send: {
+						preSend: [
+							normalizeRemitToBusinessUnits,
+							resolveAddressLabels,
+							resolveAttachmentFiles,
+						],
+					},
 				},
 			},
 			{

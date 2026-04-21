@@ -20,6 +20,38 @@ export const billOperations: INodeProperties[] = [
 					send: { preSend: [resolveBillFile] },
 				},
 			},
+			{
+				name: 'Get',
+				value: 'get',
+				action: 'Get a bill',
+				description: 'Fetch a single bill by URN',
+				routing: {
+					request: {
+						method: 'GET',
+						url: '=/ap-api/bill/{{$parameter["billUrn"]}}',
+					},
+				},
+			},
+			{
+				name: 'Get List',
+				value: 'list',
+				action: 'Get a list of bills',
+				description: 'Fetch a paginated, filtered list of bills',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '/ap-api/bill/list',
+						body: {
+							isFirstLoad: true,
+							fields: [],
+							isPagination: true,
+							dateFormat: 'MM/DD/YYYY',
+							sortField: 'createdAt',
+							sortOrder: 'ASC',
+						},
+					},
+				},
+			},
 		],
 		default: 'upload',
 	},

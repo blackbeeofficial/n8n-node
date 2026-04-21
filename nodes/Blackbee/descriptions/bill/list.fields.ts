@@ -1,0 +1,113 @@
+import { INodeProperties, INodePropertyOptions } from 'n8n-workflow';
+
+const BILL_STATUS_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'AI Processing', value: 'AI_PROCESSING' },
+	{ name: 'Approved', value: 'APPROVED' },
+	{ name: 'Awaiting Approval', value: 'AWAITING_APPROVAL' },
+	{ name: 'Awaiting QA', value: 'AWAITING_QA' },
+	{ name: 'Awaiting Resolution', value: 'AWAITING_RESOLUTION' },
+	{ name: 'Awaiting to Post', value: 'AWAITING_TO_POST' },
+	{ name: 'Cancelled', value: 'CANCELLED' },
+	{ name: 'Deleted', value: 'DELETED' },
+	{ name: 'Initial Submission', value: 'INITIAL_SUBMISSION' },
+	{ name: 'Needs Review', value: 'NEEDS_REVIEW' },
+	{ name: 'Paid', value: 'PAID' },
+	{ name: 'Partially Paid', value: 'PARTIALLY_PAID' },
+	{ name: 'Posted', value: 'POSTED' },
+	{ name: 'Posting Failed', value: 'POSTING_FAILED' },
+	{ name: 'Rejected', value: 'REJECTED' },
+	{ name: 'Resolved', value: 'RESOLVED' },
+	{ name: 'Reversed', value: 'REVERSED' },
+	{ name: 'Selected for Payment', value: 'SELECTED_FOR_PAYMENT' },
+	{ name: 'Submitted for Payment', value: 'SUBMITTED_FOR_PAYMENT' },
+	{ name: 'Uploaded', value: 'UPLOADED' },
+	{ name: 'Verified', value: 'VERIFIED' },
+];
+
+export const listFields: INodeProperties[] = [
+	// LIST: pagination
+	{
+		displayName: 'Page',
+		name: 'page',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 1,
+		displayOptions: { show: { resource: ['bills'], operation: ['list'] } },
+		description: 'Page number to fetch (1-based)',
+		routing: { send: { type: 'body', property: 'page' } },
+	},
+	{
+		displayName: 'Count',
+		name: 'count',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 25,
+		displayOptions: { show: { resource: ['bills'], operation: ['list'] } },
+		description: 'Number of items per page',
+		routing: { send: { type: 'body', property: 'count' } },
+	},
+
+	// LIST: optional filters
+	{
+		displayName: 'Additional Fields',
+		name: 'listAdditionalFields',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: { show: { resource: ['bills'], operation: ['list'] } },
+		options: [
+			{
+				displayName: 'Bill Types',
+				name: 'billTypes',
+				type: 'string',
+				typeOptions: { multipleValues: true },
+				default: [],
+				description: 'Restrict results to these bill types',
+				routing: { send: { type: 'body', property: 'billTypes' } },
+			},
+			{
+				displayName: 'Search Term',
+				name: 'searchTerm',
+				type: 'string',
+				default: '',
+				description: 'Free-text search across bill number / vendor',
+				routing: { send: { type: 'body', property: 'searchTerm' } },
+			},
+			{
+				displayName: 'Sort Field',
+				name: 'sortField',
+				type: 'string',
+				default: 'createdAt',
+				routing: { send: { type: 'body', property: 'sortField' } },
+			},
+			{
+				displayName: 'Sort Order',
+				name: 'sortOrder',
+				type: 'options',
+				options: [
+					{ name: 'Ascending', value: 'ASC' },
+					{ name: 'Descending', value: 'DESC' },
+				],
+				default: 'ASC',
+				routing: { send: { type: 'body', property: 'sortOrder' } },
+			},
+			{
+				displayName: 'Statuses',
+				name: 'statuses',
+				type: 'multiOptions',
+				options: BILL_STATUS_OPTIONS,
+				default: [],
+				routing: { send: { type: 'body', property: 'statuses' } },
+			},
+			{
+				displayName: 'Vendor IDs',
+				name: 'vendorIds',
+				type: 'string',
+				typeOptions: { multipleValues: true },
+				default: [],
+				description: 'Restrict results to these vendor IDs',
+				routing: { send: { type: 'body', property: 'vendorIds' } },
+			},
+		],
+	},
+];

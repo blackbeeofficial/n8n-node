@@ -24,15 +24,52 @@ export async function getCountries(this: ILoadOptionsFunctions): Promise<INodePr
 	return toOptions(res ?? []);
 }
 
+// All states across every supported country — single call to
+// GET /secure-auth/config/states with no countryCode query param, which the
+// backend treats as "return everything". Used by the remit-to stateCode
+// dropdown where n8n's load-options callback can't scope itself to the
+// currently-edited array item, so we can't derive the sibling countryCode.
+// State values are backend-internal IDs assumed to be globally unique.
+export async function getAllStates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const states = (await blackbeeApiRequest.call(
+		this,
+		'GET',
+		'/secure-auth/config/states',
+	)) as LabelValue[];
+	return toOptions(states ?? []);
+}
+
 // States — GET /secure-auth/config/states?countryCode=<code> → plain array.
 // Depends on the sibling countryCode field in the same Address collection.
+// When no country is selected we surface a hint option so the dropdown isn't
+// silently empty. The value is '' so the node's `required: true` on stateCode
+// still blocks execution if the user tries to submit without choosing a real
+// state.
 export async function getStates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	const countryCode = resolveCountryCode.call(this);
-	if (!countryCode) return [];
+	if (!countryCode) {
+		return [
+			{
+				name: '⚠ Select a Country First',
+				value: '',
+				description: 'State options appear after you choose a Country in this address',
+			},
+		];
+	}
 	const res = (await blackbeeApiRequest.call(this, 'GET', '/secure-auth/config/states', {
 		countryCode,
 	})) as LabelValue[];
-	return toOptions(res ?? []);
+	const options = toOptions(res ?? []);
+	if (options.length === 0) {
+		return [
+			{
+				name: 'ℹ No States Available for the Selected Country',
+				value: '',
+				description: 'The backend returned no states for this country',
+			},
+		];
+	}
+	return options;
 }
 
 // Vendor setup list endpoints — all share GET /ap-api/vendor-setup/label-value?type=<X>
@@ -60,14 +97,19 @@ export async function getPaymentModes(this: ILoadOptionsFunctions) {
 }
 
 // Helper — walk the likely parameter paths to find the selected countryCode.
-// Supports both top-level `address.details.countryCode` and the nested
-// `remitToInfos.item[i].address.details.countryCode` (n8n's load-options scope
-// varies by call site).
+// Supports the top-level `additionalFields.address.details.countryCode`
+// (Create Vendor) and the nested
+// `additionalFields.remitToInfos.item[i].address.details.countryCode`
+// (n8n's load-options scope varies by call site and doesn't expose the
+// active remit-to index, so we fall back to the first remit-to item that
+// has a countryCode set).
 function resolveCountryCode(this: ILoadOptionsFunctions): string {
 	const candidates: string[] = [
+		'&countryCode',
 		'countryCode',
 		'details.countryCode',
 		'address.details.countryCode',
+		'additionalFields.address.details.countryCode',
 	];
 	for (const path of candidates) {
 		try {
@@ -76,6 +118,25 @@ function resolveCountryCode(this: ILoadOptionsFunctions): string {
 		} catch {
 			// next path
 		}
+	}
+	try {
+		const additional = this.getCurrentNodeParameter('additionalFields') as
+			| {
+					address?: { details?: { countryCode?: string } };
+					remitToInfos?: {
+						item?: Array<{ address?: { details?: { countryCode?: string } } }>;
+					};
+			  }
+			| undefined;
+		const top = additional?.address?.details?.countryCode;
+		if (top) return top;
+		const items = additional?.remitToInfos?.item ?? [];
+		for (const it of items) {
+			const v = it?.address?.details?.countryCode;
+			if (v) return v;
+		}
+	} catch {
+		// ignore
 	}
 	try {
 		const addr = this.getCurrentNodeParameter('address') as

@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import FormData from 'form-data';
 import {
 	IBinaryData,
 	IDataObject,
@@ -7,7 +6,7 @@ import {
 	IHttpRequestOptions,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { BLACKBEE_BASE_URL } from '../GenericFunctions';
+import { getBlackbeeBaseUrl } from '../GenericFunctions';
 
 type LabelValue = { label: string; value: string };
 
@@ -25,6 +24,7 @@ export async function resolveAddressLabels(
 
 	// Local per-request caches so repeated remit-to entries share one fetch.
 	let countriesCache: LabelValue[] | undefined;
+	let allStatesCache: LabelValue[] | undefined;
 	const statesCache = new Map<string, LabelValue[]>();
 
 	const fetchCountries = async (): Promise<LabelValue[]> => {
@@ -40,6 +40,17 @@ export async function resolveAddressLabels(
 		const states = ((await httpGet.call(this, '/secure-auth/config/states', { countryCode })) as LabelValue[]) ?? [];
 		statesCache.set(countryCode, states);
 		return states;
+	};
+
+	// Remit-to's state dropdown is populated from the unfiltered
+	// /secure-auth/config/states (via getAllStates), because n8n's load-options
+	// can't read sibling countryCode inside an array item. That means the
+	// stateCode the user picked may not be present in the country-filtered
+	// response — fall back to a global fetch when the scoped lookup misses.
+	const fetchAllStates = async (): Promise<LabelValue[]> => {
+		if (allStatesCache) return allStatesCache;
+		allStatesCache = ((await httpGet.call(this, '/secure-auth/config/states')) as LabelValue[]) ?? [];
+		return allStatesCache;
 	};
 
 	const resolveAddress = async (address: IDataObject | undefined): Promise<IDataObject | undefined> => {
@@ -59,9 +70,16 @@ export async function resolveAddressLabels(
 		}
 
 		const stateCode = (flat.stateCode as string | undefined) ?? '';
-		if (stateCode && !flat.state && countryCode) {
-			const states = await fetchStates(countryCode);
-			const match = states.find((s) => s.value === stateCode);
+		if (stateCode && !flat.state) {
+			let match: LabelValue | undefined;
+			if (countryCode) {
+				const scoped = await fetchStates(countryCode);
+				match = scoped.find((s) => s.value === stateCode);
+			}
+			if (!match) {
+				const all = await fetchAllStates();
+				match = all.find((s) => s.value === stateCode);
+			}
 			if (match) flat.state = match.label;
 		}
 
@@ -93,9 +111,10 @@ async function httpGet(
 	endpoint: string,
 	qs: IDataObject = {},
 ): Promise<unknown> {
+	const baseURL = await getBlackbeeBaseUrl.call(this);
 	return this.helpers.httpRequestWithAuthentication.call(this, 'blackbeeApi', {
 		method: 'GET',
-		baseURL: BLACKBEE_BASE_URL,
+		baseURL,
 		url: endpoint,
 		qs,
 		json: true,
@@ -164,6 +183,34 @@ function stripLeadingDot(s: string): string {
 	return s.startsWith('.') ? s.slice(1) : s;
 }
 
+// Unwrap the n8n resourceLocator wrapper on each remit-to's `businessUnit`
+// and map it to `businessUnits: string[]` (the backend DTO field). Drops the
+// field when no value was selected so the validator doesn't see an empty
+// string ID.
+export async function normalizeRemitToBusinessUnits(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	const body = (requestOptions.body ?? {}) as IDataObject;
+	if (!Array.isArray(body.remitToInfos)) return requestOptions;
+
+	body.remitToInfos = (body.remitToInfos as IDataObject[]).map((remit) => {
+		const next = { ...remit };
+		const bu = next.businessUnit as IDataObject | string | undefined;
+		delete next.businessUnit;
+
+		let value = '';
+		if (typeof bu === 'string') value = bu;
+		else if (bu && typeof bu === 'object') value = ((bu as IDataObject).value as string) ?? '';
+
+		if (value.trim()) next.businessUnits = [value.trim()];
+		return next;
+	});
+
+	requestOptions.body = body;
+	return requestOptions;
+}
+
 // Reads the binary property named by the `binaryPropertyName` parameter and
 // rebuilds the outgoing request as multipart/form-data with a single `file`
 // part, matching the Bill API's uploadBill contract.
@@ -188,10 +235,11 @@ export async function resolveBillFile(
 	const buffer = await this.helpers.getBinaryDataBuffer(binaryPropertyName);
 
 	const form = new FormData();
-	form.append('file', buffer, {
-		filename: binary.fileName ?? 'bill',
-		contentType: binary.mimeType ?? 'application/octet-stream',
-	});
+	form.append(
+		'file',
+		new Blob([buffer], { type: binary.mimeType ?? 'application/octet-stream' }),
+		binary.fileName ?? 'bill',
+	);
 
 	requestOptions.body = form;
 	// Let form-data set its own multipart boundary; drop the node-level JSON header.

@@ -76,10 +76,18 @@ export const addressValues: INodeProperties[] = [
 		default: '',
 		typeOptions: {
 			loadOptionsMethod: 'getStates',
-			loadOptionsDependsOn: ['countryCode'],
+			// Multiple forms so n8n re-invokes getStates whether the change event
+			// fires with the bare sibling name, the fixedCollection-scoped path,
+			// or the full absolute path under additionalFields (Create Vendor).
+			loadOptionsDependsOn: [
+				'countryCode',
+				'details.countryCode',
+				'address.details.countryCode',
+				'additionalFields.address.details.countryCode',
+			],
 		},
 		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Pick a Country first; the list refreshes for the selected country. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 	},
 	{
 		displayName: 'Zip Code',
@@ -89,3 +97,26 @@ export const addressValues: INodeProperties[] = [
 		default: '',
 	},
 ];
+
+// Variant of addressValues used inside the `remitToInfos` array. n8n's
+// load-options callback doesn't expose which array item is being edited, so
+// the stateCode dropdown can't scope its fetch to the sibling countryCode
+// of the current remit-to item. Instead, the stateCode here uses
+// `getAllStates` which returns states for every supported country, labeled
+// with a country prefix ("United States – California"). countryCode stays
+// a dropdown because its options don't depend on any sibling.
+export const addressValuesForRemitTo: INodeProperties[] = addressValues.map((prop) => {
+	if (prop.name === 'stateCode') {
+		return {
+			displayName: 'State Name or ID',
+			name: 'stateCode',
+			type: 'options',
+			required: true,
+			default: '',
+			typeOptions: { loadOptionsMethod: 'getAllStates' },
+			description:
+				'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+		} as INodeProperties;
+	}
+	return prop;
+});

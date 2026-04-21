@@ -4,6 +4,7 @@ import {
 	BANK_ACCOUNT_TYPE_OPTIONS,
 	BUSINESS_TYPE_OPTIONS,
 	addressValues,
+	addressValuesForRemitTo,
 } from './shared';
 
 export const createFields: INodeProperties[] = [
@@ -323,7 +324,7 @@ export const createFields: INodeProperties[] = [
 							{
 								name: 'details',
 								displayName: 'Address',
-								values: addressValues,
+								values: addressValuesForRemitTo,
 							},
 						],
 					},
