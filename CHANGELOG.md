@@ -4,6 +4,11 @@ All notable changes to `n8n-nodes-blackbee` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0/).
 
+## [0.2.1] - 2026-04-21
+
+### Added
+- `author` field in `package.json` so n8n's Creator Portal submission can read the maintainer email from npm metadata.
+
 ## [0.2.0] - 2026-04-21
 
 ### Added
@@ -27,5 +32,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Vendor resource: `Create`, `Get`, `Get List`.
 - Bill resource: `Upload`, `Get`.
 
+[0.2.1]: https://github.com/blackbeeofficial/n8n-node/releases/tag/v0.2.1
 [0.2.0]: https://github.com/blackbeeofficial/n8n-node/releases/tag/v0.2.0
 [0.1.0]: https://github.com/blackbeeofficial/n8n-node/releases/tag/v0.1.0

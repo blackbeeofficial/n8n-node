@@ -1,7 +1,12 @@
 {
   "name": "n8n-nodes-blackbee",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "n8n community node for the Blackbee Accounts-Payable API.",
+  "author": {
+    "name": "Blackbee",
+    "email": "platform.services@cratoflow.com",
+    "url": "https://blackbeeai.com"
+  },
   "keywords": [
     "n8n-community-node-package",
     "n8n",
