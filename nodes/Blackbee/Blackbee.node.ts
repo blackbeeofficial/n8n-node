@@ -17,11 +17,26 @@ export class Blackbee implements INodeType {
 		displayName: 'Blackbee',
 		name: 'blackbee',
 		icon: 'file:blackbee.svg',
-		group: ['transform'],
+		group: ['output'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Interact with the Blackbee Accounts-Payable API',
 		defaults: { name: 'Blackbee' },
+		codex: {
+			categories: ['Finance & Accounting'],
+			subcategories: {
+				'Finance & Accounting': ['Accounting'],
+			},
+			resources: {
+				primaryDocumentation: [
+					{ url: 'https://www.npmjs.com/package/n8n-nodes-blackbee' },
+				],
+				credentialDocumentation: [
+					{ url: 'https://www.npmjs.com/package/n8n-nodes-blackbee' },
+				],
+			},
+			alias: ['accounts payable', 'AP', 'invoice', 'bill', 'vendor', 'payment', 'blackbee'],
+		},
 		inputs: ['main'],
 		outputs: ['main'],
 		credentials: [
